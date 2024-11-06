@@ -1,123 +1,152 @@
-let eastbound = [];
-let westbound = [];
-let trafficLight = 'green';
-let lightTimer = 0;
+// Cars Cars Cars
+// Natan
+//10/11/2024
+
+let eastBound = [];
+let westBound = [];
+let trafficLight;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
-
-  // Populate vehicles
+ 
+  // adding vehicles
   for (let i = 0; i < 20; i++) {
-    let y = height / 2 - 40 + random(0, 80); // Random y value for lane
-    eastbound.push(new Vehicle(0, random(width), y, 1, random(2, 5), color(0, 0, 255))); // Cars in blue
-    westbound.push(new Vehicle(1, random(width), y, 0, random(2, 5), color(255, 0, 0))); // Trucks in red
+    eastBound.push(new Vehicle(1));
+    westBound.push(new Vehicle(0));
   }
+
+  trafficLight = new TrafficLight();
 }
 
 function draw() {
+  background(0, 255, 120);
   drawRoad();
-  
-  // If the light is green or lightTimer is 0 (back to green), allow cars to move
-  if (trafficLight === 'green' || lightTimer === 0) {
-    for (let v of eastbound) v.action();
-    for (let v of westbound) v.action();
+ 
+  // eastbound vehicles
+  for (let vehicle of eastBound) {
+    vehicle.action();
   }
 
-  // Draw traffic light in top-left corner
-  fill(trafficLight === 'green' ? 'green' : 'red');
-  rect(20, 20, 20, 60);
-
-  // Traffic light timer
-  if (trafficLight === 'red' && lightTimer > 0) {
-    lightTimer--;
-    if (lightTimer === 0) {
-      trafficLight = 'green'; // Switch back to green after timer ends
-    }
+  // westbound vehicles
+  for (let vehicle of westBound) {
+    vehicle.action();
   }
+
+  trafficLight.display();
+  trafficLight.checkState();
 }
 
-// Draw the road with a dashed line in the middle
-function drawRoad() {
-  background(220); // light gray background
+function drawRoad(){
+  rectMode(CENTER);
   fill(0);
-  rect(0, height / 2 - 50, width, 100); // black road
-  stroke(255);
-  strokeWeight(4);
-  for (let i = 0; i < width; i += 40) {
-    line(i, height / 2, i + 20, height / 2); // dashed lane divider
-  }
-  noStroke();
-}
-
-// Handle mouse clicks to dynamically add cars
-function mousePressed() {
-  let y = height / 2 - 40 + random(0, 80);
-  if (mouseButton === LEFT) {
-    if (keyIsDown(SHIFT)) {
-      westbound.push(new Vehicle(1, random(width), y, 0, random(2, 5), color(255, 0, 0))); // Add westbound truck
-    } else {
-      eastbound.push(new Vehicle(0, random(width), y, 1, random(2, 5), color(0, 0, 255))); // Add eastbound car
-    }
+  rect(width / 2, height / 2, width, height / 2);
+  for (let i = 0; i <= width; i += width / 12) {
+    fill(255, 255, 255);
+    rect(i, height / 2, width / 24, 12);
   }
 }
 
-// Handle spacebar press to toggle traffic light to red for 120 frames
-function keyPressed() {
-  if (key === ' ') {
-    trafficLight = 'red';
-    lightTimer = 120; // Stay red for 120 frames
-  }
-}
-
-// Vehicle class
 class Vehicle {
-  constructor(type, x, y, direction, xSpeed, color) {
-    this.type = type; // 0 for Car, 1 for Truck
-    this.x = x;
-    this.y = y;
-    this.direction = direction; // 0 for left, 1 for right
-    this.xSpeed = xSpeed;
-    this.color = color;
+  constructor(direction) {
+    this.type = int(random(0, 2));
+    this.color = color(random(255), random(255), random(255));
+    this.y = random(height / 4, 3 * height / 4);
+    this.direction = direction;
+    this.xSpeed = this.direction === 1 ? random(2, 5) : random(-5, -2);
+    this.x = this.direction === 1 ? 0 : width;
   }
 
-  // Render vehicle
   display() {
     fill(this.color);
     if (this.type === 0) {
-      rect(this.x, this.y, 40, 20); // Car dimensions
+      fill(this.color);
+      rect(this.x, this.y, 50, 25); // Car
+      fill(255, 255, 255);
+      rect(this.x + 15, this.y + 15, 20, 5);    
+      rect(this.x - 15, this.y + 15, 20, 5);  
+      rect(this.x + 15, this.y - 15, 20, 5);  
+      rect(this.x - 15, this.y - 15, 20, 5);    
     } else {
-      rect(this.x, this.y, 60, 30); // Truck dimensions
+      rect(this.x, this.y, 75, 35); // Truck
     }
   }
 
-  // Move the vehicle, wrap around if off-screen
   move() {
-    this.x += this.direction === 1 ? this.xSpeed : -this.xSpeed;
-    if (this.x > width) this.x = 0;
-    if (this.x < 0) this.x = width;
+    if (!trafficLight.red) {
+      this.x += this.xSpeed;
+      if (this.x > width + 50) {
+        this.x = -50;
+      } else if (this.x < -50) {
+        this.x = width + 50;
+      }
+    }
   }
 
-  // Increase speed (up to a max of 15)
   speedUp() {
-    this.xSpeed = min(this.xSpeed + 1, 15);
+    if (abs(this.xSpeed) < 15) {
+      this.xSpeed *= 1.1;
+    }
   }
 
-  // Decrease speed (down to a min of 0)
   speedDown() {
-    this.xSpeed = max(this.xSpeed - 1, 0);
+    if (abs(this.xSpeed) > 1) {
+      this.xSpeed *= 0.9;
+    }
   }
 
-  // Change vehicle color
   changeColor() {
     this.color = color(random(255), random(255), random(255));
   }
 
-  // Perform vehicle actions
   action() {
     this.move();
-    if (random(1) < 0.01) this.speedUp();
-    if (random(1) < 0.01) this.speedDown();
-    if (random(1) < 0.01) this.changeColor();
+    if (random(100) < 1) {
+      this.speedUp();
+    }
+    if (random(100) < 1) {
+      this.speedDown();
+    }
+    if (random(100) < 1) {
+      this.changeColor();
+    }
     this.display();
   }
 }
+
+class TrafficLight {
+  constructor() {
+    this.state = "green";
+    this.red = false;
+    this.timer = 0;
+  }
+
+  display() {
+    fill(this.red ? 'red' : 'green');
+    rect(width - 50, 50, 20, 60);
+  }
+
+  checkState() {
+    if (this.red) {
+      this.timer++;
+      if (this.timer > 120) {
+        this.red = false;
+        this.timer = 0;
+      }
+    }
+  }
+}
+
+function keyPressed() {
+  if (key === ' ') {
+    trafficLight.red = true;
+  }
+}
+
+function mousePressed() {
+  if (mouseButton === LEFT && !keyIsDown(SHIFT)) {
+    eastBound.push(new Vehicle(1));
+  } else if (mouseButton === LEFT && keyIsDown(SHIFT)) {
+    westBound.push(new Vehicle(0));
+  }
+}
+
