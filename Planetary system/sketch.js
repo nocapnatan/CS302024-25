@@ -7,16 +7,26 @@ let planets = [];
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
-  sun = new Sun(width / 2, height / 2); // Create the sun at the center
+  sun = new Sun(width / 2, height / 2); 
 }
 
 function draw() {
   background(0);
-  sun.display(); // Draw the sun
 
-  // Move and display each planet
+  
   for (let planet of planets) {
-    planet.action();
+    if (planet.direction === 1) {
+      planet.action();
+    }
+  }
+
+  sun.display(); 
+
+  
+  for (let planet of planets) {
+    if (planet.direction === -1) {
+      planet.action();
+    }
   }
 }
 
@@ -24,88 +34,89 @@ class Sun {
   constructor(x, y) {
     this.x = x;
     this.y = y;
-    this.radius = 50; 
+    this.radius = 100; 
   }
 
   display() {
-    fill(255, 204, 0); 
-    ellipse(this.x, this.y, this.radius * 2); 
+    fill(255, 204, 0);
+    ellipse(this.x, this.y, this.radius * 2);
   }
 }
 
 class Planet {
-  constructor(x, y, color) {
-    this.x = x;
-    this.y = y;
+  constructor(color) {
+    this.x = sun.x - 300; 
+    this.y = sun.y;
     this.radius = 20; 
     this.color = color;
-    this.xSpeed = random(1, 3); // Horizontal speed of the planet
+    this.xSpeed = random(1, 3); 
+    this.direction = 1; 
     this.moons = []; 
   }
 
   display() {
     fill(this.color);
-    ellipse(this.x, this.y, this.radius * 2); // Draw the planet
+    ellipse(this.x, this.y, this.radius * 2); 
 
-    // Draw moons
+    
     for (let moon of this.moons) {
-      moon.display(this.x, this.y); // Pass planet position to moon
+      moon.display(this.x, this.y);
     }
   }
 
   move() {
-    // Move the planet from left to right
-    this.x += this.xSpeed;
+    
+    this.x += this.xSpeed * this.direction;
 
-    // Reset position to the left edge if it moves off the right edge
-    if (this.x - this.radius > width) {
-      this.x = -this.radius;
+    
+    if (this.x > sun.x + 300 && this.direction === 1) {
+      this.direction = -1;
+    }
+
+    
+    if (this.x < sun.x - 300 && this.direction === -1) {
+      this.direction = 1;
     }
   }
 
   createMoon() {
-    // Add a moon to this planet
-    if (this.moons.length < 2) { // Limit to 2 moons
+    if (this.moons.length < 2) {
       this.moons.push(new Moon(this.color));
     }
   }
 
   action() {
-    this.move(); // Move the planet
-    this.display(); // Display the planet and its moons
+    this.move(); 
+    this.display(); 
   }
 }
 
 class Moon {
   constructor(planetColor) {
-    this.radius = 10; // Smaller than the planet
-    this.color = color(red(planetColor), green(planetColor), blue(planetColor), 100); // Greyish
+    this.radius = 10; 
+    this.color = color(red(planetColor), green(planetColor), blue(planetColor), 100); 
     this.steps = 0;
     this.xSpeed = random(1, 2);
-    this.orbitRadius = 30; // Distance from the planet
+    this.orbitRadius = 30;
     this.direction = random([1, -1]);
   }
 
   display(planetX, planetY) {
-    // Calculate moon's position around the planet
     let x = planetX + this.orbitRadius * cos(this.steps * 0.02);
     let y = planetY + this.orbitRadius * sin(this.steps * 0.02);
 
-    // Increment steps for the orbital motion
     this.steps += this.xSpeed * this.direction;
 
     fill(this.color);
-    ellipse(x, y, this.radius * 2); // Draw the moon
+    ellipse(x, y, this.radius * 2);
   }
 }
 
 function mousePressed() {
   if (mouseButton === LEFT && !keyIsDown(SHIFT)) {
-    // Add a new planet on left click
-    let newPlanet = new Planet(sun.x - 200, sun.y + random(-100, 100), color(random(255), random(255), random(255)));
+    let newPlanet = new Planet(color(random(255), random(255), random(255)));
     planets.push(newPlanet);
   } else if (mouseButton === LEFT && keyIsDown(SHIFT)) {
-    // Add a moon to the last planet on shift + left click
     if (planets.length > 0) {
       planets[planets.length - 1].createMoon();
     }
